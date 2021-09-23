@@ -1,5 +1,5 @@
 hot clone a running device using BPF trace to get changed data
-while copy. Requires bash and bpftrace installed.
+while copy. Requires bash, grep, dd and bpftrace.
 
 Inspired by hot-clone:
 
