@@ -13,6 +13,9 @@ Testsetup:
  truncate -s 10G mydisk
  losetup /dev/loop0
 ```
+
+Checkout major/minor number of created loopback device and change the `trace-changes`
+script.
  
 Now attempt to hot clone the device (it will copy the data to the local directory).
 While copy is running, create a new filesystem on the device:
