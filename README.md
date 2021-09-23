@@ -8,15 +8,18 @@ Inspired by hot-clone:
 Its all hardcoded, go figure ..
 
 Testsetup:
-
+```
  modprobe loop
  truncate -s 10G mydisk
  losetup /dev/loop0
+```
  
 Now attempt to hot clone the device (it will copy the data to the local directory).
 While copy is running, create a new filesystem on the device:
 
+```
  mkfs.xfs -f /dev/loop0
+ ```
 
 Changes to the device are tracked meanwhile using a bpftrace script.
 After copy has finished, script replays changes to the device based
