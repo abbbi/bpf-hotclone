@@ -32,11 +32,11 @@ While copy is running, create a new filesystem on the device, or write data to i
 
 Changes to the device are tracked meanwhile using a bpftrace script.
 After copy has finished, script replays changes to the device based
-on the information from the bpftrace script.
+on the information from the bpftrace results.
 
-Resulting volumes should match then :)
+Resulting volume contents may match (hopefully) :)
 
 If you execute this on a running root volume, you may need to execute
-from ramfs .. (not tested)
+from ramfs, or a network file system .. (not tested)
 
 
