@@ -18,9 +18,10 @@ Checkout major/minor number of created loopback device and change the `trace-cha
 script.
  
 Now attempt to hot clone the device (it will copy the data to the local directory).
+Requires root.
 
 ```
- ./hot-clone
+ # ./hot-clone
 ```
  
 While copy is running, create a new filesystem on the device, or write data to it.. somehow.
