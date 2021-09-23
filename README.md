@@ -18,7 +18,12 @@ Checkout major/minor number of created loopback device and change the `trace-cha
 script.
  
 Now attempt to hot clone the device (it will copy the data to the local directory).
-While copy is running, create a new filesystem on the device:
+
+```
+ ./hot-clone
+```
+ 
+While copy is running, create a new filesystem on the device, or write data to it.. somehow.
 
 ```
  mkfs.xfs -f /dev/loop0
