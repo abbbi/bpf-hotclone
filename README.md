@@ -31,12 +31,13 @@ While copy is running, create a new filesystem on the device, or write data to i
  ```
 
 Changes to the device are tracked meanwhile using a bpftrace script.
-After copy has finished, script replays changes to the device based
+After copy has finished, script replays changes to the target device based
 on the information from the bpftrace results.
 
-Resulting volume contents may match (hopefully) :)
+Resulting volume contents may have a consistent state (or in case of the
+provided example, match byte by byte)
 
-If you execute this on a running root volume, you may need to execute
+If you attempt to hot-copy a running root volume, you may want to execute
 from ramfs, or a network file system .. (not tested)
 
 
