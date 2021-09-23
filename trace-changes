@@ -1,0 +1,14 @@
+#!/usr/bin/bpftrace
+tracepoint:block:block_rq_complete
+/args->error == 0/
+{
+    $bytes = (args->nr_sector * 512);
+    $minor = (args->dev >> 20);
+    $major = (args->dev & ((1 << 20) - 1));
+    $action = args->rwbs;
+    if ($minor == 7 && $major == 0 && $bytes > 0) {
+        if(strncmp("W", $action, 1) == 0) {
+            printf("REPLAY:%d:%d\n", args->sector, $bytes)
+        }
+    }
+}

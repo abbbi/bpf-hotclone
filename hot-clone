@@ -1,0 +1,23 @@
+#!/bin/bash
+rm -f changes
+rm -f targetfile
+echo "setup tracing"
+./trace-changes > changes &
+
+echo "copy device"
+dd if=/dev/loop0 of=targetfile status=progress && kill %1
+losetup /dev/loop1 targetfile
+
+for LINE in $(grep REPLAY changes); do
+    SECTOR=$(echo $LINE | cut -d ':' -f 2)
+    SIZE=$(echo $LINE | cut -d ':' -f 3)
+    SRCPOS=$(expr $SECTOR \* 512)
+
+    echo "Need to replay sector $SECTOR ($SIZE) bytes"
+
+    dd if=/dev/loop0 skip=$SECTOR count=$(expr $SIZE / 512) | dd of=/dev/loop1 seek=$SECTOR count=$(expr $SIZE / 512)
+done
+
+md5sum /dev/loop0 /dev/loop1
+
+losetup -d /dev/loop1
