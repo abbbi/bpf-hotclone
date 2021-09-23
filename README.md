@@ -1,4 +1,4 @@
-hot clone a running device using BPF trace to get changed data
+hot clone a in use block device using BPF trace to get changed data
 while copy. Requires bash, grep, dd and bpftrace. !POC!
 
 Inspired by hot-clone:
