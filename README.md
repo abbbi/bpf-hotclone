@@ -5,8 +5,6 @@ Inspired by hot-clone:
 
  https://github.com/benjojo/hot-clone
 
-Its all hardcoded, go figure ..
-
 Testsetup:
 ```
  modprobe loop
