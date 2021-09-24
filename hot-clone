@@ -34,6 +34,8 @@ for FILE in $(ls -1t changeset/); do
     dd if=changeset/$FILE count=$(expr $SIZE / 512) 2>/dev/null | dd of=$TARGETLOOP seek=$SECTOR count=$(expr $SIZE / 512) 2>/dev/null
 done
 
+sync
+
 echo "comparing target and source"
 md5sum /dev/loop0 $TARGETLOOP
 losetup -d $TARGETLOOP
