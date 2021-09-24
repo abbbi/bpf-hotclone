@@ -1,20 +1,23 @@
 #!/bin/bash
 rm -f changes
 rm -f targetfile
+
+rm -f tmpfifo
+mkfifo tmpfifo
+
 echo "setup tracing"
-./trace-changes > changes &
+./dump-changes &
+./trace-changes > tmpfifo &
 
 echo "copy device"
 dd if=/dev/loop0 of=targetfile status=progress && kill %1
 losetup /dev/loop1 targetfile
 
-for LINE in $(grep REPLAY changes); do
-    SECTOR=$(echo $LINE | cut -d ':' -f 2)
-    SIZE=$(echo $LINE | cut -d ':' -f 3)
-
-    echo "Need to replay sector $SECTOR ($SIZE) bytes"
-
-    dd if=/dev/loop0 skip=$SECTOR count=$(expr $SIZE / 512) 2>/dev/null | dd of=/dev/loop1 seek=$SECTOR count=$(expr $SIZE / 512) 2>/dev/null
+for FILE in $(ls -1t changeset/); do
+    echo "Replay data from $FILE"
+    SIZE=$(stat -c "%s" changeset/$FILE)
+    SECTOR=$(echo $FILE | cut -d '.' -f 1)
+    dd if=changeset/$FILE seek=$SECTOR count=$(expr $SIZE / 512) of=/dev/loop1 2>/dev/null
 done
 
 md5sum /dev/loop0 /dev/loop1
