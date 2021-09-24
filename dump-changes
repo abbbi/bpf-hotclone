@@ -1,12 +1,13 @@
 #!/bin/bash
+[ -z $1 ] && echo "need device" && exit 1
 rm -rf changeset
 mkdir changeset
 while read -r line; do
     if [[ $line =~ REPLAY ]] ; then
         SECTOR=$(echo $line | cut -d ':' -f 2)
         SIZE=$(echo $line | cut -d ':' -f 3)
-        echo "Need to replay sector $SECTOR ($SIZE) bytes"
+        echo "Will need to replay sector $SECTOR ($SIZE) bytes"
         UUID=$(cat /proc/sys/kernel/random/uuid)
-        dd if=/dev/loop0 skip=$SECTOR count=$(expr $SIZE / 512) of="changeset/${SECTOR}.$UUID" 2> /dev/null
+        dd if=$1 skip=$SECTOR count=$(expr $SIZE / 512) of="changeset/${SECTOR}.$UUID" 2> /dev/null
     fi
 done < "tmpfifo"
