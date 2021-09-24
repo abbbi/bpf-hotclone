@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 rm -f changes
 rm -f targetfile
 rm -f tmpfifo
