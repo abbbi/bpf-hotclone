@@ -8,7 +8,7 @@ tracepoint:block:block_rq_complete
     $action = args->rwbs;
     if ($minor == $1 && $major == $2 && $bytes > 0) {
         if(strncmp("W", $action, 1) == 0) {
-            printf("REPLAY:%d:%d\n", args->sector, $bytes)
+            printf("REPLAY:%d:%d:%s\n", args->sector, $bytes, $action)
         }
     }
 }
