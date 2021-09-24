@@ -23,7 +23,7 @@ While copy is running, create a new filesystem on the original device, or write
 data to it.. somehow.
 
 ```
- mkfs.xfs /dev/loop0 -f; mount /dev/loop0 /mnt; echo foo > /mnt/FILE; umount /mnt
+ mkfs.xfs /dev/loop0 -f
 ```
 
 Changes to the device are tracked meanwhile using a bpftrace script and stored

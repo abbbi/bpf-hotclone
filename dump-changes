@@ -1,8 +1,11 @@
 #!/bin/bash
 [ -z $1 ] && echo "need device" && exit 1
-rm -rf changeset
 mkdir changeset
 while read -r line; do
+    if [[ $line =~ EXIT ]] ; then
+        exit 0
+    fi
+
     if [[ $line =~ REPLAY ]] ; then
         SECTOR=$(echo $line | cut -d ':' -f 2)
         SIZE=$(echo $line | cut -d ':' -f 3)
