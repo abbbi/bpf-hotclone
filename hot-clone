@@ -16,7 +16,7 @@ MAJOR=$(stat -c %t $1)
 
 echo "setup tracing"
 ./dump-changes &
-./trace-changes $MINOR $MAJOR > tmpfifo &
+./trace-changes $MAJOR $MINOR > tmpfifo &
 
 echo "copy device"
 dd if=/dev/loop0 of=$2 status=progress && kill %1
@@ -29,5 +29,6 @@ for FILE in $(ls -1t changeset/); do
     dd if=changeset/$FILE seek=$SECTOR count=$(expr $SIZE / 512) of=/dev/loop1 2>/dev/null
 done
 
+echo "comparing target and source"
 md5sum /dev/loop0 /dev/loop1
 losetup -d /dev/loop1
