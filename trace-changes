@@ -6,9 +6,7 @@ tracepoint:block:block_rq_complete
     $minor = (args->dev >> 20);
     $major = (args->dev & ((1 << 20) - 1));
     $action = args->rwbs;
-    // set minor and major number here to track only
-    // changes for a specific device
-    if ($minor == 7 && $major == 0 && $bytes > 0) {
+    if ($minor == $1 && $major == $2 && $bytes > 0) {
         if(strncmp("W", $action, 1) == 0) {
             printf("REPLAY:%d:%d\n", args->sector, $bytes)
         }

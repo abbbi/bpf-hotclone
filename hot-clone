@@ -1,17 +1,26 @@
 #!/bin/bash
 rm -f changes
 rm -f targetfile
-
 rm -f tmpfifo
 mkfifo tmpfifo
 
+if [ -z $1 ] || [ -z $2 ]; then
+    echo "hot-clone device targetfile"
+    exit 1
+fi
+
+[ ! -e $1 ] && echo "device $1 does not exist" && exit 1
+
+MINOR=$(stat -c %T $1)
+MAJOR=$(stat -c %t $1)
+
 echo "setup tracing"
 ./dump-changes &
-./trace-changes > tmpfifo &
+./trace-changes $MINOR $MAJOR > tmpfifo &
 
 echo "copy device"
-dd if=/dev/loop0 of=targetfile status=progress && kill %1
-losetup /dev/loop1 targetfile
+dd if=/dev/loop0 of=$2 status=progress && kill %1
+losetup /dev/loop1 $2
 
 for FILE in $(ls -1t changeset/); do
     echo "Replay data from $FILE"
@@ -21,5 +30,4 @@ for FILE in $(ls -1t changeset/); do
 done
 
 md5sum /dev/loop0 /dev/loop1
-
 losetup -d /dev/loop1

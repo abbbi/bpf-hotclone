@@ -14,30 +14,28 @@ Testsetup:
  losetup /dev/loop0
 ```
 
-Checkout major/minor number of created loopback device and change the `trace-changes`
-script.
- 
 Now attempt to hot clone the device (it will copy the data to the local directory).
 Requires root.
 
 ```
- # ./hot-clone
+ # ./hot-clone /dev/loop0 mydata
 ```
  
-While copy is running, create a new filesystem on the device, or write data to it.. somehow.
+While copy is running, create a new filesystem on the original device, or write
+data to it.. somehow.
 
 ```
- mkfs.xfs -f /dev/loop0
- ```
+ mkfs.xfs /dev/loop0 -f; mount /dev/loop0 /mnt; echo foo > /mnt/FILE; umount /mnt
+```
 
-Changes to the device are tracked meanwhile using a bpftrace script.
+Changes to the device are tracked meanwhile using a bpftrace script and stored
+in a local folder (./changeset/)
+
 After copy has finished, script replays changes to the target device based
-on the information from the bpftrace results.
+on the information from changeset catched by the bpftrace results.
 
-Resulting volume contents may have a consistent state (or in case of the
+Resulting volume contents should have a consistent state (or in case of the
 provided example, match byte by byte)
 
 If you attempt to hot-copy a running root volume, you may want to execute
 from ramfs, or a network file system .. (not tested)
-
-
