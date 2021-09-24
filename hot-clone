@@ -6,6 +6,8 @@ rm -f targetfile
 rm -f tmpfifo
 mkfifo tmpfifo
 
+[ -z $2 ] && TARGETLOOP=/dev/loop2 || TARGETLOOP=$3
+
 if [ -z $1 ] || [ -z $2 ]; then
     echo "hot-clone device targetfile"
     exit 1
@@ -23,15 +25,15 @@ echo "setup tracing"
 echo "copy device"
 dd if=$1 of=$2 status=progress && kill %1
 echo EXIT > tmpfifo
-losetup /dev/loop2 $2
+losetup $TARGETLOOP $2
 
 for FILE in $(ls -1t changeset/); do
     echo "Replay data from $FILE"
     SIZE=$(stat -c "%s" changeset/$FILE)
     SECTOR=$(echo $FILE | cut -d '.' -f 1)
-    dd if=changeset/$FILE count=$(expr $SIZE / 512) 2>/dev/null | dd of=/dev/loop2 seek=$SECTOR count=$(expr $SIZE / 512) 2>/dev/null
+    dd if=changeset/$FILE count=$(expr $SIZE / 512) 2>/dev/null | dd of=$TARGETLOOP seek=$SECTOR count=$(expr $SIZE / 512) 2>/dev/null
 done
 
 echo "comparing target and source"
-md5sum /dev/loop0 /dev/loop2
-losetup -d /dev/loop2
+md5sum /dev/loop0 $TARGETLOOP
+losetup -d $TARGETLOOP
