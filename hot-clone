@@ -24,7 +24,11 @@ echo "setup tracing"
 
 echo "copy device"
 dd if=$1 of=$2 status=progress && kill %1
-echo EXIT > tmpfifo
+kill %2
+while ps -a | grep trace-changes>/dev/null; do
+    echo "wait for bpftrace to finish"; sleep 1;
+done
+echo "trace exit"
 losetup $TARGETLOOP $2
 
 for FILE in $(ls -1t changeset/); do
@@ -36,6 +40,7 @@ done
 
 sync
 
-echo "comparing target and source"
-md5sum /dev/loop0 $TARGETLOOP
 losetup -d $TARGETLOOP
+#echo "comparing target and source"
+#md5sum /dev/loop0 $TARGETLOOP
+#losetup -d $TARGETLOOP
