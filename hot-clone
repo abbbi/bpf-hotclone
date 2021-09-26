@@ -1,0 +1,158 @@
+#!/usr/bin/python3
+import os
+import sys
+import time
+import glob
+import logging
+import argparse
+import subprocess
+import signal, psutil
+from natsort import natsorted
+from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor as Pool
+
+done = False
+cur = os.path.dirname(os.path.abspath(__file__))
+
+
+def kill_child_processes(parent_pid, sig=signal.SIGTERM):
+    try:
+        parent = psutil.Process(parent_pid)
+    except psutil.NoSuchProcess:
+        return
+    children = parent.children(recursive=True)
+    for process in children:
+        try:
+            process.send_signal(sig)
+        except psutil.NoSuchProcess:
+            return
+
+
+def callback(future):
+    global done
+    done = True
+    if future.exception() is not None:
+        print("Copy process exited errnous")
+        raise SystemExit(1)
+    else:
+        print("Copy process exited OK")
+
+
+def trace_changes(source, changedir, major, minor):
+    fh = open(source, "rb")
+
+    with subprocess.Popen(
+        ["{}/trace-changes".format(cur), str(major), str(minor)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+    ) as tracer:
+        cnt = 0
+        for line in iter(tracer.stdout.readline, ""):
+            if b"REPLAY" in line:
+                print(line.decode().strip())
+                (_, sector, size, action) = line.decode().split(":")
+                fh.seek(int(sector) * 512, 0)
+                with open("{}/{}.{}".format(changedir, sector, cnt), "wb") as targetfh:
+                    targetfh.write(fh.read(int(size)))
+                cnt += 1
+
+
+def main(command_line=None):
+    """Main"""
+    parser = argparse.ArgumentParser("hot-clone")
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.required = True
+    clone = subparsers.add_parser("clone", help="clone and replay volume")
+    clone.add_argument("--source", required=True, type=str, help="source volume")
+    clone.add_argument(
+        "--target", required=True, type=str, help="target volume or file"
+    )
+    clone.add_argument(
+        "--changedir",
+        required=True,
+        type=str,
+        help="destination directory for storing changed data",
+    )
+    clone.add_argument(
+        "--noreplay",
+        required=False,
+        action="store_true",
+        help="skip replay of changesets",
+    )
+    replay = subparsers.add_parser("replay", help="clone and replay volume")
+    replay.add_argument("--changedir", required=True, type=str, help="source volume")
+    replay.add_argument(
+        "--target", required=True, type=str, help="target volume or file"
+    )
+    replay.add_argument(
+        "--noreplay", required=False, default=False, help=argparse.SUPPRESS
+    )
+    args = parser.parse_args(command_line)
+
+    if args.command == "clone":
+        device = os.stat(args.source).st_rdev
+        minor = os.minor(device)
+        major = os.major(device)
+
+        try:
+            fh = open(args.source, "rb")
+        except Exception as e:
+            print("cant open source device: {}".format(e))
+            raise SystemExit(1)
+
+        if not os.path.exists(args.changedir):
+            os.mkdir(args.changedir)
+        else:
+            if not len(os.listdir(args.changedir)) == 0:
+                print("changedir must be empty")
+                raise SystemExit(1)
+
+        pool = Pool(max_workers=2)
+        print("Starting Trace process..")
+        b = pool.submit(trace_changes, args.source, args.changedir, major, minor)
+
+        print("Starting copy..")
+        f = pool.submit(
+            subprocess.run,
+            "dd if={} of={}".format(args.source, args.target),
+            shell=True,
+        )
+        f.add_done_callback(callback)
+
+        while True:
+            if done is True:
+                pool.shutdown(wait=False)
+                kill_child_processes(os.getpid())
+                break
+
+    print("Data clone finished, trace process ended")
+
+    if args.command in ("replay", "clone") and args.noreplay is not True:
+        replayList = glob.glob("{}/*".format(args.changedir))
+        print("Replaying changes")
+        if replayList:
+            replayList = natsorted(replayList, key=lambda x: x.split(".")[1])
+            tfh = open(args.target, "ab")
+            tfh.seek(0)
+            for repl in replayList:
+                with open(repl, "rb") as rfh:
+                    _ = repl.split(".")[0]
+                    sector = _.split("/")[1]
+                    print(
+                        "Replay: sector [{}] from [{}]".format(int(sector) * 512, repl)
+                    )
+                    tfh.seek(int(sector) * 512, 0)
+                    tfh.write(rfh.read())
+                    tfh.seek(0)
+            tfh.close()
+        else:
+            print("Nothing to replay")
+    else:
+        print("Skipping replay")
+
+    print("done")
+
+
+if __name__ == "__main__":
+    main()
